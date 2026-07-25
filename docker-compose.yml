@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: siakad
     ports: 
-      - "5432:5432" 
+      - "5433:5432" 
     volumes:
       - dbdata:/var/lib/postgresql/data 
       - ./migrations:/docker-entrypoint-initdb.d 
@@ -33,6 +33,18 @@ services:
     depends_on:
       akademik-db:
         condition: service_healthy
+  
+  rekap-service:
+    build: 
+      context: ./rekap-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - APP_PORT=8080
+      - AKADEMIK_BASE_URL=http://akademik-service:8080
+    depends_on:
+      - akademik-service
 
 volumes:
   dbdata: 
