@@ -3,11 +3,9 @@ package siakad
 import (
 	"context"
 	"regexp"
-	"sort"
 	"strings"
 )
 
-// ServicePort adalah Primary Port (Inbound) untuk orkestrasi bisnis
 type ServicePort interface {
 	TambahMahasiswa(ctx context.Context, input InputMahasiswaDTO) error
 	DaftarMahasiswa(ctx context.Context, filterJurusan string, limit, offset int) ([]Mahasiswa, error)
@@ -16,14 +14,12 @@ type ServicePort interface {
 	HapusMahasiswa(ctx context.Context, nim string) error
 	InputNilai(ctx context.Context, nim string, input InputNilaiDTO) error
 	Transkrip(ctx context.Context, nim string) (TranskripDTO, error)
-	PerJurusan(ctx context.Context) (map[string][]Mahasiswa, error)
-	TopIPK(ctx context.Context, n int) ([]MahasiswaDetailDTO, error)
+	Ringkasan(ctx context.Context, nim string) (RingkasanDTO, error) // <-- TAMBAH INI, ganti PerJurusan & TopIPK
 }
 
-// coreService adalah implementasi dari Primary Port, tidak tahu menahu soal SQL atau HTTP
 type coreService struct {
-	mPort MahasiswaRepository // Menggunakan Secondary Port
-	nPort NilaiRepository     // Menggunakan Secondary Port
+	mPort MahasiswaRepository 
+	nPort NilaiRepository     
 }
 
 func NewService(mPort MahasiswaRepository, nPort NilaiRepository) ServicePort {
@@ -136,42 +132,30 @@ func (s *coreService) Transkrip(ctx context.Context, nim string) (TranskripDTO, 
 	return TranskripDTO{MahasiswaDetailDTO: detail, DaftarNilai: nilai, TotalSKS: totalSKS}, nil
 }
 
-func (s *coreService) PerJurusan(ctx context.Context) (map[string][]Mahasiswa, error) {
-	semua, err := s.mPort.Semua(ctx)
+func (s *coreService) Ringkasan(ctx context.Context, nim string) (RingkasanDTO, error) {
+	m, err := s.mPort.Cari(ctx, nim)
 	if err != nil {
-		return nil, err
+		return RingkasanDTO{}, err
 	}
-	rekap := make(map[string][]Mahasiswa)
-	for _, m := range semua {
-		rekap[m.Jurusan] = append(rekap[m.Jurusan], m)
-	}
-	return rekap, nil
-}
-
-func (s *coreService) TopIPK(ctx context.Context, n int) ([]MahasiswaDetailDTO, error) {
-	if n <= 0 {
-		n = 3
-	}
-	semua, err := s.mPort.Semua(ctx)
+	
+	nilai, err := s.nPort.PerMahasiswa(ctx, nim)
 	if err != nil {
-		return nil, err
+		return RingkasanDTO{}, err
 	}
-	var daftarDetail []MahasiswaDetailDTO
-	for _, m := range semua {
-		detail, err := s.DetailMahasiswa(ctx, m.NIM)
-		if err != nil {
-			return nil, err
-		}
-		daftarDetail = append(daftarDetail, detail)
+	
+	totalSKS := 0
+	for _, n := range nilai {
+		totalSKS += n.SKS
 	}
-	sort.Slice(daftarDetail, func(i, j int) bool {
-		return daftarDetail[i].IPK > daftarDetail[j].IPK
-	})
-	if len(daftarDetail) < n {
-		n = len(daftarDetail)
-	}
-	if daftarDetail == nil {
-		return []MahasiswaDetailDTO{}, nil
-	}
-	return daftarDetail[:n], nil
+	
+	ipk := HitungIPK(nilai)
+	
+	return RingkasanDTO{
+		NIM:      m.NIM,
+		Nama:     m.Nama,
+		Jurusan:  m.Jurusan,
+		Status:   m.Status,
+		TotalSKS: totalSKS,
+		IPK:      ipk,
+	}, nil
 }

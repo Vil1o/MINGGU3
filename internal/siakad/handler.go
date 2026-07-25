@@ -28,8 +28,7 @@ func (h *HttpAdapter) RegisterRoutes(rg *gin.RouterGroup) {
 		api.DELETE("/mahasiswa/:nim", h.HapusMahasiswa)
 		api.POST("/mahasiswa/:nim/nilai", h.InputNilai)
 		api.GET("/mahasiswa/:nim/transkrip", h.Transkrip)
-		api.GET("/rekap/jurusan", h.PerJurusan)
-		api.GET("/rekap/top-ipk", h.TopIPK)
+		api.GET("/mahasiswa/:nim/ringkasan", h.Ringkasan) 
 	}
 }
 
@@ -129,8 +128,9 @@ func (h *HttpAdapter) Transkrip(c *gin.Context) {
 	response.Success(c, http.StatusOK, data)
 }
 
-func (h *HttpAdapter) PerJurusan(c *gin.Context) {
-	data, err := h.core.PerJurusan(c.Request.Context())
+func (h *HttpAdapter) Ringkasan(c *gin.Context) {
+	nim := c.Param("nim")
+	data, err := h.core.Ringkasan(c.Request.Context(), nim)
 	if err != nil {
 		response.Error(c, mapErrorToStatus(err), err)
 		return
@@ -138,12 +138,3 @@ func (h *HttpAdapter) PerJurusan(c *gin.Context) {
 	response.Success(c, http.StatusOK, data)
 }
 
-func (h *HttpAdapter) TopIPK(c *gin.Context) {
-	n, _ := strconv.Atoi(c.DefaultQuery("n", "3"))
-	data, err := h.core.TopIPK(c.Request.Context(), n)
-	if err != nil {
-		response.Error(c, mapErrorToStatus(err), err)
-		return
-	}
-	response.Success(c, http.StatusOK, data)
-}
