@@ -1,4 +1,4 @@
-module siakad-service
+module akademik-service
 
 go 1.26.5
 

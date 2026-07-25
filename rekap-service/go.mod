@@ -1,4 +1,4 @@
-module siakad-service
+module rekap-service
 
 go 1.26.5
 

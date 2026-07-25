@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"siakad-service/internal/config"
-	"siakad-service/internal/siakad"
+	"akademik-service/internal/config"
+	"akademik-service/internal/siakad"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

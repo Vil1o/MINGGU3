@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"siakad-service/internal/response"
+	"akademik-service/internal/response"
 
 	"github.com/gin-gonic/gin"
 )
